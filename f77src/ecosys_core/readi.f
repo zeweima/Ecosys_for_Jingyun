@@ -1,9 +1,32 @@
+      Module NUM_VARIBELS
+      contains
+      Function f_numbervars(vars) result(numvars)
+c      character(len=*), intent(in) :: vars
+c      INTEGER numvars
+c      CHARACTER*len(vars) tmpvars
+c      character*100 tmpvar
+c      tmpvars = trim(adjustl(vars))
+
+      character(len=*), intent(in) :: vars
+      integer :: numvars
+      character(len=len(vars)) :: tmpvars
+      character(len=256) :: tmpvar
+      tmpvars = trim(adjustl(vars))
+      numvars = 0
+      DO WHILE (len_trim(tmpvars) > 0)
+      read(tmpvars, *) tmpvar
+      numvars = numvars + 1
+      tmpvars = tmpvars(index(tmpvars, trim(tmpvar))+len_trim(tmpvar):)
+      END DO            
+      END Function f_numbervars
+      END Module NUM_VARIBELS
 
       SUBROUTINE readi(NA,ND,NT,NE,NAX,NDX,NTX,NEX,NF,NFX,NTZ
      2,NTZX,NHW,NHE,NVN,NVS)
 C
 C     THIS SUBROUTINE READS ALL SOIL AND TOPOGRAPHIC INPUT FILES
 C
+      USE NUM_VARIBELS 
       include "parameters.h"
       include "filec.h"
       include "files.h"
@@ -28,6 +51,7 @@ C
       DIMENSION IDAT(20),DAT(50),DATK(50)
 	  dimension datav(40)
       PARAMETER (TWILGT=0.06976)
+      CHARACTER*200 Lines
 C
 C     OPEN OUTPUT LOGFILES,AND SITE,TOPOGRAPHY FILES FROM
 C     FILE NAMES IN DATA ARRAYS LOADED IN 'MAIN'
@@ -67,6 +91,18 @@ C       :=1 means allowing freeze-thaw plus erosion to change elevation
 C       :=2 means allowing freeze-thaw plus SOC accumulation to change elevation
 C       :=3 means allowing freeze-thaw plus SOC accumulation, plus erosion to change elevation
 C       :=-1 means no change in elevation.
+
+cc    Zma changes 20220206 cccccccccccccccc
+      WRITE(*,*)'lin96',TRIM(PREFIX)//DATA(1)
+      DO I =1,4
+      READ(1, '(A)') Lines
+c      write(*,*)'101',Lines
+      END DO
+      REWIND(1)
+      NumCol = f_numbervars(Lines)
+      
+c      write(*,*)'101',NumCol
+ccccccccccccccccccccccccccccccccccccccccccc
       READ(1,*)(datav(jj),jj=1,4)
 	  ALATG=datav(1)
 	  ALTIG=datav(2)
@@ -75,8 +111,17 @@ C       :=-1 means no change in elevation.
 C      READ(1,*)ALATG,ALTIG,ATCAG,IDTBLG
       READ(1,*)OXYEG,Z2GEG,CO2EIG,CH4EG,Z2OEG,ZNH3EG
       READ(1,*)IETYPG,ISALTG,IERSNG,NCNG,DTBLIG,DTBLDIG,DTBLGG
+c     zma changes 20200206 cccccccccccccccc
+      IF (NumCol.gt.13.1)THEN
+      READ(1,*)RCHQNG,RCHQEG,RCHQSG,RCHQWG,RCHGNUG,RCHGEUG,RCHGSUG 
+     2,RCHGWUG,RCHGNTG,RCHGETG,RCHGSTG,RCHGWTG,RCHGDG,TTILED
+      TILED = TTILED
+      write(*,*)'115',TILED
+      ELSE
       READ(1,*)RCHQNG,RCHQEG,RCHQSG,RCHQWG,RCHGNUG,RCHGEUG,RCHGSUG
      2,RCHGWUG,RCHGNTG,RCHGETG,RCHGSTG,RCHGWTG,RCHGDG
+      ENDIF
+      
       READ(1,*)(DHI(NX),NX=1,NHE)
       READ(1,*)(DVI(NY),NY=1,NVS)
       CLOSE(1)
